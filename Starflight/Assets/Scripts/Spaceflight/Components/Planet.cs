@@ -60,7 +60,7 @@ public class Planet : MonoBehaviour
 		// update the rotation of the starport
 		if ( m_starportModel != null )
 		{
-			m_starportModel.transform.localRotation = Quaternion.Euler( -90.0f, 0.0f, m_currentRotationAngle * 20.0f );
+			m_starportModel.transform.localRotation = Quaternion.Euler( -90.0f, 0.0f, m_currentRotationAngle * SpaceflightController.m_instance.m_starportRotationSpeedMultiplier );
 		}
 	}
 
@@ -177,7 +177,7 @@ public class Planet : MonoBehaviour
 	// continue generating maps for this planet
 	public float GenerateMaps()
 	{
-		float progress = m_planetGenerator.Process();
+		var progress = m_planetGenerator.Process();
 
 		if ( m_planetGenerator.m_abort )
 		{
@@ -191,6 +191,30 @@ public class Planet : MonoBehaviour
 			m_material.SetTexture( "SF_SpecularMap", m_planetGenerator.m_specularTexture );
 			m_material.SetTexture( "SF_NormalMap", m_planetGenerator.m_normalTexture );
 			m_material.SetTexture( "SF_WaterMaskMap", m_planetGenerator.m_waterMaskTexture );
+
+			// is this a gas giant?
+			if ( m_planet.IsGasGiant() )
+			{
+				// yes - turn off the detail normal map
+				m_material.DisableKeyword( "SF_DETAILNORMALMAP_ON" );
+			}
+			else
+			{
+				// no - turn on the detail normal map
+				m_material.EnableKeyword( "SF_DETAILNORMALMAP_ON" );
+			}
+
+			// does this planet have an atmosphere?
+			if ( m_planet.HasAtmosphere() )
+			{
+				// yes - allow full detail normal map strength
+				m_material.SetFloat( "SF_DetailNormalMapStrength", 1.0f );
+			}
+			else
+			{
+				// no - make detail normal map strength weak so craters are more apparent
+				m_material.SetFloat( "SF_DetailNormalMapStrength", 0.05f );
+			}
 
 			m_meshRenderer.material = m_material;
 

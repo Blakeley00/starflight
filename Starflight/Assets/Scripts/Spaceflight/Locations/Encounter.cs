@@ -43,11 +43,6 @@ public class Encounter : MonoBehaviour
 	// current dolly distance
 	float m_currentOffset;
 
-	// unity awake
-	void Awake()
-	{
-	}
-
 	// unity start
 	void Start()
 	{
@@ -221,7 +216,7 @@ public class Encounter : MonoBehaviour
 		m_main.SetActive( true );
 
 		// reset the current offset
-		m_currentOffset = 0.0f;
+		m_currentOffset = 1024.0f;
 
 		// get to the game data
 		var gameData = DataController.m_instance.m_gameData;
@@ -1397,6 +1392,13 @@ public class Encounter : MonoBehaviour
 
 				// remember the question from the aliens
 				m_pdEncounter.m_lastQuestionFromAliens = comm.m_id;
+			}
+
+			// was this an answer?
+			if ( ( comm.m_subject >= GD_Comm.Subject.Themselves ) && ( comm.m_subject <= GD_Comm.Subject.TheAncients ) )
+			{
+				// yes -add it to the ships log
+				playerData.m_shipsLog.AddAlienComm( comm, commText );
 			}
 		}
 

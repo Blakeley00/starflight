@@ -194,7 +194,8 @@ public class StarSystem : MonoBehaviour
 		// follow the player ship
 		SpaceflightController.m_instance.m_playerCamera.SetCameraFollow( SpaceflightController.m_instance.m_playerShip.gameObject, Vector3.up * 1024.0f );
 
-		// fade in the map
+		// fade viewport out instantly and then fade in the viewport
+		SpaceflightController.m_instance.m_viewport.StartFade( 0.0f, 0.0f );
 		SpaceflightController.m_instance.m_viewport.StartFade( 1.0f, 2.0f );
 
 		// show / hide the nebula depending on if we are in one
@@ -345,7 +346,7 @@ public class StarSystem : MonoBehaviour
 				var progress = planetController.GenerateMaps();
 
 				// update the total progress
-				totalProgress += progress / 1.3f / 8.0f;
+				totalProgress += progress / 8.0f;
 
 				// still not done
 				allDone = false;

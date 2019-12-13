@@ -25,6 +25,7 @@ Shader "Starflight/Terrain Grid"
 		SF_DetailNormalMapStrength( "Detail Normal Map Strength", Range( 0, 10 ) ) = 1
 
 		SF_EmissiveMap( "Emissive Map", 2D ) = "black" {}
+		SF_EmissiveTint( "Emissive Tint", Color ) = ( 1, 1, 1, 1 )
 		SF_EmissiveColor( "Emissive Color", Color ) = ( 0, 0, 0, 1 )
 
 		/* UV2 Maps */
@@ -64,6 +65,37 @@ Shader "Starflight/Terrain Grid"
 
 	SubShader
 	{
+		Pass
+		{
+			Name "SHADOWCASTER"
+
+			Tags
+			{
+				"LightMode" = "ShadowCaster"
+			}
+
+			Cull [SF_CullMode]
+			ZWrite On
+			ZTest LEqual
+
+			CGPROGRAM
+
+				#pragma target 3.0
+
+				#pragma shader_feature SF_ALBEDOMAP_ON
+				#pragma shader_feature SF_DETAILALBEDOMAP_ON
+				#pragma shader_feature SF_ALPHA_ON
+				#pragma shader_feature SF_ALPHATEST_ON
+
+				#pragma vertex vertTerrainGridShadowCaster_SF
+				#pragma fragment fragShadowCaster_SF
+
+				#include "SF - TerrainGrid.cginc"
+				#include "SF - ShadowCaster.cginc"
+
+			ENDCG
+		}
+
 		Pass
 		{
 			Name "DEFERRED"

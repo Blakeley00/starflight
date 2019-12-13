@@ -15,6 +15,7 @@ float SF_Speed;
 
 sampler2D SF_WaterMaskMap;
 float4 SF_WaterMaskMap_ST;
+float SF_WaterNormalMapStrength;
 
 sampler2D _MainTex;
 float4 _MainTex_ST;
@@ -38,7 +39,12 @@ float SF_DetailNormalMapStrength;
 
 sampler2D SF_EmissiveMap;
 float4 SF_EmissiveMap_ST;
+float3 SF_EmissiveTint;
 float3 SF_EmissiveColor;
+
+sampler2D SF_ReflectionMap;
+float4 SF_ReflectionMap_ST;
+float3 SF_ReflectionColor;
 
 sampler2D SF_OcclusionMap;
 float4 SF_OcclusionMap_ST;
@@ -273,7 +279,7 @@ float3 ComputeNormal( SF_VertexShaderOutput i )
 
 				#endif // SF_DETAILNORMALMAP_ISCOMPRESSED
 
-				float4 waterNormalMap = float4( normalize( ( waterNormalMapA.xyz + waterNormalMapB.xyz + waterNormalMapC.xyz ) * float3( SF_DetailNormalMapStrength.xx, 1 ) ), 1 );
+				float4 waterNormalMap = float4( normalize( ( waterNormalMapA.xyz + waterNormalMapB.xyz + waterNormalMapC.xyz ) * float3( SF_WaterNormalMapStrength.xx, 1 ) ), 1 );
 
 				#if SF_WATERMASKMAP_ON
 
@@ -351,7 +357,26 @@ float3 ComputeEmissive( SF_VertexShaderOutput i )
 
 	#endif // SF_EMISSIVEMAP_ON
 
-	return SF_EmissiveColor + emissiveMap;
+	return SF_EmissiveColor + emissiveMap * SF_EmissiveTint;
+}
+
+float3 ComputeReflection( SF_VertexShaderOutput i, float3 normal )
+{
+	#if SF_REFLECTIONMAP_ON
+
+		float3 reflectionVector = reflect( i.eyeDir, normal );
+
+		float3 reflectionMap = tex2D( SF_ReflectionMap, TRANSFORM_TEX( reflectionVector.xy, SF_ReflectionMap ) );
+
+		reflectionMap *= SF_ReflectionColor;
+
+	#else // !SF_REFLECTIONMAP_ON
+
+		float3 reflectionMap = 0;
+
+	#endif // SF_REFLECTIONMAP_ON
+
+	return reflectionMap;
 }
 
 float4 ComputeLighting( SF_VertexShaderOutput i, float4 albedo, float4 specular, float3 emissive, float3 normal, float fogAmount )
@@ -413,8 +438,6 @@ SF_VertexShaderOutput ComputeCloudsVertexShaderOutput( SF_VertexShaderInput v )
 	SF_VertexShaderOutput o;
 
 	o = ComputeVertexShaderOutput( v );
-
-	o.positionClip = UnityApplyLinearShadowBias( UnityClipSpaceShadowCasterPos( v.position, v.normal ) );
 
 	float2 baseTexCoord = TRANSFORM_TEX( o.texCoord0.xy, _MainTex );
 

@@ -20,14 +20,17 @@ public class Starmap : MonoBehaviour
 	// unity update
 	void Update()
 	{
-		// if the player hits cancel (esc) close the starmap
-		if ( InputController.m_instance.m_cancel )
+		// if the player hits cancel (esc) or submit (enter) close the starmap
+		if ( InputController.m_instance.m_cancel || InputController.m_instance.m_submit )
 		{
 			Hide();
 
 			InputController.m_instance.Debounce();
 
 			SpaceflightController.m_instance.m_buttonController.DeactivateButton();
+
+			// show the radar (we are in hyperspace)
+			SpaceflightController.m_instance.m_radar.Show();
 		}
 		else
 		{
@@ -101,6 +104,9 @@ public class Starmap : MonoBehaviour
 
 		// make this game object active
 		gameObject.SetActive( true );
+
+		// hide the radar
+		SpaceflightController.m_instance.m_radar.Hide();
 
 		// play a sound
 		SoundController.m_instance.PlaySound( SoundController.Sound.Beep );

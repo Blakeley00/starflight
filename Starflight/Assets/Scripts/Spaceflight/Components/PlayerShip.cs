@@ -7,6 +7,12 @@ public class PlayerShip : MonoBehaviour
 	// the ship
 	public Transform m_ship;
 
+	// the contrail particle systems
+	public ParticleSystem[] m_contrailParticleSystem;
+
+	// the exhaust particle system
+	public ParticleSystem m_exhaustParticleSystem;
+
 	// the missile launcher
 	public GameObject m_missileLauncher;
 
@@ -37,10 +43,8 @@ public class PlayerShip : MonoBehaviour
 	// keep track of the last banking angle (for interpolation)
 	float m_currentBankingAngle;
 
-	// unity awake
-	void Awake()
-	{
-	}
+	// keep track of whether we allow particles to emit or not
+	bool m_particlesAreEnabled = true;
 
 	// unity start
 	void Start()
@@ -171,10 +175,32 @@ public class PlayerShip : MonoBehaviour
 			m_currentBankingAngle = Mathf.Lerp( m_currentBankingAngle, bankingAngle, Time.deltaTime * 4.0f );
 
 			// bank the ship based on the calculated angle
-			m_ship.rotation = Quaternion.AngleAxis( m_currentBankingAngle, playerData.m_general.m_currentDirection ) * m_ship.rotation;
+			m_ship.rotation = Quaternion.AngleAxis( m_currentBankingAngle, playerData.m_general.m_currentDirection ) * m_ship.rotation * Quaternion.Euler( -90.0f, 0.0f, 0.0f );
 
 			// update the last direction
 			m_lastDirection = playerData.m_general.m_currentDirection;
+		}
+
+		// adjust the engine exhaust glow opacity and scale based on the current speed
+		if ( m_particlesAreEnabled )
+		{
+			var emission = m_exhaustParticleSystem.emission;
+
+			emission.enabled = m_enginesAreOn;
+
+			// adjust opacity of start color of contrails based on speed of the ship
+			var opacity = Mathf.Lerp( -1.0f, 2.0f, playerData.m_general.m_currentSpeed / playerData.m_general.m_currentMaximumSpeed );
+
+			foreach ( var particleSystem in m_contrailParticleSystem )
+			{
+				var main = particleSystem.main;
+				var startColor = main.startColor;
+				var color = startColor.color;
+
+				color.a = opacity;
+				startColor.color = color;
+				main.startColor = startColor;
+			}
 		}
 
 		// get the current hyperspace coordinates (if in hyperspace get it from the player transform due to flux travel not updating m_hyperspaceCoordinates)
@@ -228,6 +254,23 @@ public class PlayerShip : MonoBehaviour
 	public void TurnOffEngines()
 	{
 		m_enginesAreOn = false;
+	}
+
+	// call this to enable or disable the ship particle systems
+	public void EnableParticles( bool enabled )
+	{
+		m_particlesAreEnabled = enabled;
+
+		var emission = m_exhaustParticleSystem.emission;
+
+		emission.enabled = m_particlesAreEnabled;
+
+		foreach ( var particleSystem in m_contrailParticleSystem )
+		{
+			emission = particleSystem.emission;
+
+			emission.enabled = m_particlesAreEnabled;
+		}
 	}
 
 	// call this to get the current position of the player ship

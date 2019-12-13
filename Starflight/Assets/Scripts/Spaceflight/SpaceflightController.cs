@@ -28,13 +28,14 @@ public class SpaceflightController : MonoBehaviour
 	public Starmap m_starmap;
 	public Messages m_messages;
 	public TerrainVehicle m_terrainVehicle;
-	public DisembarkArthShip m_disembarkArthShip;
+	public ShipsLog m_shipsLog;
 
 	// some settings
 	public float m_alienHyperspaceRadarDistance;
 	public float m_alienStarSystemRadarDistance;
 	public float m_encounterRange;
 	public float m_planetRotationSpeed;
+	public float m_starportRotationSpeedMultiplier;
 
 	// true if the game is paused
 	public bool m_gameIsPaused;
@@ -46,7 +47,7 @@ public class SpaceflightController : MonoBehaviour
 	bool m_alreadyFadedIn;
 
 	// static instance to this spaceflight controller
-	static public SpaceflightController m_instance;
+	public static SpaceflightController m_instance;
 
 	// constructor
 	SpaceflightController()
@@ -75,6 +76,10 @@ public class SpaceflightController : MonoBehaviour
 	// unity start
 	void Start()
 	{
+		// initialize some static stuff
+		PG_AlbedoMap.Initialize();
+		PG_Craters.Initialize();
+
 		// hide everything
 		HideEverything();
 
@@ -116,7 +121,7 @@ public class SpaceflightController : MonoBehaviour
 		// are we generating planets?
 		if ( m_starSystem.GeneratingPlanets() )
 		{
-			// yes - continue generating planets
+			// continue generating planets
 			var totalProgress = m_starSystem.GeneratePlanets();
 
 			// show / update the pop up dialog
@@ -164,8 +169,8 @@ public class SpaceflightController : MonoBehaviour
 			// DataController.m_instance.SaveActiveGame();
 		}
 
-		// when player hits cancel (esc) show the save game panel (except when using the starmap)
-		if ( !m_starmap.IsOpen() )
+		// when player hits cancel (esc) show the save game panel (except when using the starmap or the ships log)
+		if ( !m_starmap.IsOpen() && !m_shipsLog.IsOpen() )
 		{
 			if ( InputController.m_instance.m_cancel )
 			{
@@ -198,6 +203,7 @@ public class SpaceflightController : MonoBehaviour
 		m_radar.Hide();
 		m_scanner.Hide();
 		m_starmap.Hide();
+		m_shipsLog.Hide();
 	}
 
 	// call this to switch to the correct location
@@ -210,17 +216,22 @@ public class SpaceflightController : MonoBehaviour
 		var playerData = DataController.m_instance.m_playerData;
 
 		// are we switching to a new location?
+		bool locationIsDifferent = false;
+
 		if ( playerData.m_general.m_location != newLocation )
 		{
 			// yes - remember the last location
 			playerData.m_general.m_lastLocation = playerData.m_general.m_location;
+
+			// update the player location
+			playerData.m_general.m_location = newLocation;
+
+			// remember that the new location is different
+			locationIsDifferent = true;
 		}
 
 		// make sure the display is updated (in case we are loading from a save game)
 		m_messages.Refresh();
-
-		// update the player data
-		playerData.m_general.m_location = newLocation;
 
 		// stop all looping sounds
 		SoundController.m_instance.StopAllLoopingSounds();
@@ -289,8 +300,12 @@ public class SpaceflightController : MonoBehaviour
 			}
 		}
 
-		// save the player data (since the location was most likely changed)
-		// DataController.m_instance.SaveActiveGame();
+		// did we switch to a new location?
+		if ( locationIsDifferent )
+		{
+			// yes - save the player data since the location was changed
+			DataController.m_instance.SaveActiveGame();
+		}
 	}
 	
 	// call this when a the save game panel was closed
